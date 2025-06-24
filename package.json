@@ -2,6 +2,6 @@
   "name": "gpt4o-widget",
   "version": "1.0.0",
   "dependencies": {
-    "openai": "^4.4.0"   // or latest
+    "openai": "^4.4.0"
   }
 }
