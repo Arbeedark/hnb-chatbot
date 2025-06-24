@@ -9,65 +9,102 @@
     rel="stylesheet"
   />
   <style>
-    #chat { height: 400px; overflow-y: auto; }
-    .msg { margin-bottom: .5rem; }
-    .msg.user { text-align: right; }
+    #chat { 
+      height: 400px; 
+      overflow-y: auto; 
+      background: #f8f9fa; 
+      padding: 1rem; 
+      border-radius: .25rem;
+    }
+    .msg { margin-bottom: .75rem; }
+    .msg .bubble {
+      display: inline-block;
+      padding: .5rem .75rem;
+      border-radius: 1rem;
+      max-width: 80%;
+    }
+    .msg.user .bubble {
+      background: #d1e7dd;
+      text-align: right;
+    }
+    .msg.assistant .bubble {
+      background: #e2e3e5;
+    }
   </style>
 </head>
 <body class="p-4">
-  <div class="card">
-    <div class="card-header">AI Chat</div>
-    <div id="chat" class="card-body"></div>
-    <div class="card-footer d-flex">
-      <input id="input" class="form-control me-2" placeholder="Type a message..." />
-      <button id="send" class="btn btn-primary">Send</button>
+  <div class="container">
+    <div class="card mx-auto" style="max-width: 600px;">
+      <div class="card-header text-center">
+        <strong>GPT-4o AI Chat</strong>
+      </div>
+      <div id="chat" class="card-body"></div>
+      <div class="card-footer d-flex">
+        <input id="input" class="form-control me-2" placeholder="Ask me anything…" />
+        <button id="send" class="btn btn-primary">Send</button>
+      </div>
     </div>
   </div>
 
   <script>
-    const chatEl = document.getElementById("chat");
-    const inputEl = document.getElementById("input");
-    const sendBtn = document.getElementById("send");
+    (function() {
+      const chatEl = document.getElementById("chat");
+      const inputEl = document.getElementById("input");
+      const sendBtn = document.getElementById("send");
 
-    let history = [
-      { role: "system", content: "You are a helpful assistant." }
-    ];
+      // initial system prompt for GPT-4o
+      let history = [
+        { role: "system", content: "You are a helpful AI assistant using GPT-4o." }
+      ];
 
-    function append(role, text) {
-      const div = document.createElement("div");
-      div.className = "msg " + (role === "user" ? "user text-primary" : "assistant text-success");
-      div.textContent = text;
-      chatEl.append(div);
-      chatEl.scrollTop = chatEl.scrollHeight;
-    }
+      function append(role, text) {
+        const wrapper = document.createElement("div");
+        wrapper.className = "msg " + role;
 
-    sendBtn.onclick = async () => {
-      const text = inputEl.value.trim();
-      if (!text) return;
-      append("user", text);
-      history.push({ role: "user", content: text });
-      inputEl.value = "";
-      sendBtn.disabled = true;
+        const bubble = document.createElement("div");
+        bubble.className = "bubble";
+        bubble.textContent = text;
 
-      try {
-        const res = await fetch("/api/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ messages: history })
-        });
-        const msg = await res.json();
-        append("assistant", msg.content);
-        history.push({ role: "assistant", content: msg.content });
-      } catch (e) {
-        append("assistant", "Error: could not reach API");
-      } finally {
-        sendBtn.disabled = false;
+        wrapper.appendChild(bubble);
+        chatEl.appendChild(wrapper);
+        chatEl.scrollTop = chatEl.scrollHeight;
       }
-    };
 
-    inputEl.addEventListener("keydown", e => {
-      if (e.key === "Enter") sendBtn.click();
-    });
+      async function sendMessage() {
+        const text = inputEl.value.trim();
+        if (!text) return;
+
+        append("user", text);
+        history.push({ role: "user", content: text });
+        inputEl.value = "";
+        sendBtn.disabled = true;
+
+        try {
+          const res = await fetch("/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ messages: history })
+          });
+          const msg = await res.json();
+          append("assistant", msg.content);
+          history.push({ role: "assistant", content: msg.content });
+        } catch (e) {
+          append("assistant", "🚨 Error: could not reach API");
+          console.error(e);
+        } finally {
+          sendBtn.disabled = false;
+          inputEl.focus();
+        }
+      }
+
+      sendBtn.addEventListener("click", sendMessage);
+      inputEl.addEventListener("keydown", e => {
+        if (e.key === "Enter") sendMessage();
+      });
+
+      // autofocus
+      inputEl.focus();
+    })();
   </script>
 </body>
 </html>
