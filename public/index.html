@@ -9,27 +9,24 @@
     rel="stylesheet"
   />
   <style>
-    #chat { 
-      height: 400px; 
-      overflow-y: auto; 
-      background: #f8f9fa; 
-      padding: 1rem; 
+    #chat {
+      height: 400px;
+      overflow-y: auto;
+      background: #f8f9fa;
+      padding: 1rem;
       border-radius: .25rem;
     }
     .msg { margin-bottom: .75rem; }
-    .msg .bubble {
+    .bubble {
       display: inline-block;
       padding: .5rem .75rem;
       border-radius: 1rem;
       max-width: 80%;
     }
-    .msg.user .bubble {
-      background: #d1e7dd;
-      text-align: right;
-    }
-    .msg.assistant .bubble {
-      background: #e2e3e5;
-    }
+    .user .bubble { background: #d1e7dd; float: right; }
+    .assistant .bubble { background: #e2e3e5; float: left; }
+    /* clear floats */
+    .msg::after { content: ""; display: block; clear: both; }
   </style>
 </head>
 <body class="p-4">
@@ -48,39 +45,36 @@
 
   <script>
     (function() {
+      const ORIGIN = "<YOUR_DEPLOYED_APP_URL>";  // e.g. https://gpt4o-widget.vercel.app
       const chatEl = document.getElementById("chat");
       const inputEl = document.getElementById("input");
       const sendBtn = document.getElementById("send");
 
-      // initial system prompt for GPT-4o
       let history = [
         { role: "system", content: "You are a helpful AI assistant using GPT-4o." }
       ];
 
       function append(role, text) {
-        const wrapper = document.createElement("div");
-        wrapper.className = "msg " + role;
-
+        const msg = document.createElement("div");
+        msg.className = "msg " + role;
         const bubble = document.createElement("div");
         bubble.className = "bubble";
         bubble.textContent = text;
-
-        wrapper.appendChild(bubble);
-        chatEl.appendChild(wrapper);
+        msg.appendChild(bubble);
+        chatEl.appendChild(msg);
         chatEl.scrollTop = chatEl.scrollHeight;
       }
 
       async function sendMessage() {
         const text = inputEl.value.trim();
         if (!text) return;
-
         append("user", text);
         history.push({ role: "user", content: text });
         inputEl.value = "";
         sendBtn.disabled = true;
 
         try {
-          const res = await fetch("/api/chat", {
+          const res = await fetch(`${ORIGIN}/api/chat`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ messages: history })
@@ -88,9 +82,9 @@
           const msg = await res.json();
           append("assistant", msg.content);
           history.push({ role: "assistant", content: msg.content });
-        } catch (e) {
-          append("assistant", "🚨 Error: could not reach API");
-          console.error(e);
+        } catch (err) {
+          console.error(err);
+          append("assistant", "🚨 Error: Could not reach API");
         } finally {
           sendBtn.disabled = false;
           inputEl.focus();
@@ -101,8 +95,6 @@
       inputEl.addEventListener("keydown", e => {
         if (e.key === "Enter") sendMessage();
       });
-
-      // autofocus
       inputEl.focus();
     })();
   </script>
