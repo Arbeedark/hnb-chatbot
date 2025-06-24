@@ -1,9 +1,11 @@
 {
   "version": 2,
   "builds": [
-    { "src": "api/openai.js", "use": "@vercel/node" }
+    { "src": "api/openai.js", "use": "@vercel/node" },
+    { "src": "index.html", "use": "@vercel/static" }
   ],
   "routes": [
-    { "src": "/api/openai", "dest": "/api/openai.js" }
+    { "src": "/api/openai", "dest": "/api/openai.js" },
+    { "src": "/", "dest": "/index.html" }
   ]
 }
